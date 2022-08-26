@@ -1,5 +1,5 @@
 # Prog Rock Stable
-An enhanced (hopefully!) version of Stable Diffusion
+An enhanced (hopefully!) version of Stable Diffusion. A GUI is avaiable with a limited set of features [HERE](#gui-installation-instructions).
 
 Please consider supporting my time and effort in maintaining and improving this program on my [Patreon](https://www.patreon.com/jasonmhough?fan_landing=true). Thanks!
 
@@ -79,6 +79,31 @@ There are a few settings you can tweak to improve your results:
 
 - Not every image does well with GoBIG. It is best used on images that have lots of content and fine detail everywhere. So, don't force it! Sometimes a simple upscaler like RealESRGAN will do a better job, especially on those images where your prompt might not apply to every section.
 
+# GUI Installation Instructions
+## [Visual Diffusion](https://github.com/KnoBuddy/visualdiffusion/)
+Visual Diffusion is a GUI for ProgRock-Stable. Please direct all GUI related issue/features/requests to [Visual Diffusion](https://github.com/KnoBuddy/visualdiffusion/)
+![image](https://user-images.githubusercontent.com/64171756/186978420-d18ad0f6-5a98-4e8c-ba2b-468b430231a1.png)
+## Install the GUI
+```
+conda activate prs
+cd prs
+git clone https://github.com/KnoBuddy/visualdiffusion/
+```
+### [Windows]
+```
+conda activate prs
+cd prs
+python visualdiffusion\prsgui.py
+```
+### [Linux/MacOS]
+```
+conda activate prs
+cd prs
+python3 visualdiffusion\prsgui.py
+```
+## Open the GUI
+Open up a command line window (shell) and activate the conda environment like normal, and then run prdgui.py, from within the prs folder (NOT FROM WITHIN THE VISUAL DIFFUSION FOLDER).
+Please familiarize yourself with ProgRock-Stable's Settings.
 
 # About Stable Diffusion
 *Stable Diffusion was made possible thanks to a collaboration with [Stability AI](https://stability.ai/) and [Runway](https://runwayml.com/) and builds upon our previous work:*
