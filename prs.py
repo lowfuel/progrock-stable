@@ -647,6 +647,7 @@ def do_gobig(gobig_init, gobig_scale, device, model, opt):
         finished_slices.append((finished_slice, x, y))
     final_output = grid_merge(target_image, finished_slices)
     final_output.save(f'{result}_gobig{opt.filetype}', quality = opt.quality)
+    print(opt.bucket)
     if opt.bucket:
         upload_file(f'{result}_gobig{opt.filetype}', opt.bucket)
 
