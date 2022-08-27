@@ -26,6 +26,31 @@ from ldm.models.diffusion.plms import PLMSSampler
 from types import SimpleNamespace
 import json5 as json
 
+import boto3
+from botocore.exceptions import ClientError
+
+def upload_file(file_name, bucket, object_name=None):
+    """Upload a file to an S3 bucket
+
+    :param file_name: File to upload
+    :param bucket: Bucket to upload to
+    :param object_name: S3 object name. If not specified then file_name is used
+    :return: True if file was uploaded, else False
+    """
+
+    # If S3 object_name was not specified, use file_name
+    if object_name is None:
+        object_name = os.path.basename(file_name)
+
+    # Upload the file
+    s3_client = boto3.client('s3')
+    try:
+        response = s3_client.upload_file(file_name, bucket, object_name)
+    except ClientError as e:
+        print(e)
+        return False
+    return True
+
 def chunk(it, size):
     it = iter(it)
     return iter(lambda: tuple(islice(it, size)), ())
@@ -622,6 +647,8 @@ def do_gobig(gobig_init, gobig_scale, device, model, opt):
         finished_slices.append((finished_slice, x, y))
     final_output = grid_merge(target_image, finished_slices)
     final_output.save(f'{result}_gobig{opt.filetype}', quality = opt.quality)
+    if opt.bucket:
+        upload_file(f'{result}_gobig{opt.filetype}', opt.bucket)
 
 def do_gobig_dir(gobig_dir, gobig_scale, device, model, opt):
     files = filter(lambda x:x.endswith('.png'), os.listdir(gobig_dir))
@@ -788,7 +815,8 @@ def main():
                     "filetype": filetype,
                     "hide_metadata": settings.hide_metadata,
                     "quality": quality,
-                    "device_id": device_id
+                    "device_id": device_id,
+                    "bucket": False
                 }
                 opt = SimpleNamespace(**opt)
                 # render the image(s)!
