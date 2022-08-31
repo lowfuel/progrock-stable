@@ -245,9 +245,17 @@ def do_run(device, model, opt):
 
                     metadata = PngInfo()
                     if opt.hide_metadata == False:
-                        metadata.add_text("prompt", str(prompts))
-                        metadata.add_text("seed", str(opt.seed))
-                        metadata.add_text("steps", str(opt.ddim_steps))
+                        metadata.add_text("Meta prompt", str(opt.prompt))
+                        metadata.add_text("Prompt", str(prompts))
+                        metadata.add_text("Seed", str(opt.seed))
+                        metadata.add_text("Steps", str(opt.ddim_steps))
+                        metadata.add_text("Scale", str(opt.scale))
+                        metadata.add_text("ETAa", str(opt.ddim_eta))
+                        metadata.add_text("Model", str(Settings().checkpoint))
+                        if not opt.init_image == None:
+                            metadata.add_text("Init Image", str(opt.init_image))
+                            metadata.add_text("Strenght", str(opt.strength))
+                        
 
                     # to image
                     grid = 255. * rearrange(grid, 'c h w -> h w c').cpu().numpy()
