@@ -31,7 +31,13 @@ Create a [conda](https://conda.io/) environment named `prs`:
 conda env create -f environment.yaml
 conda activate prs
 ```
-
+For Linux:
+```
+git clone https://github.com/openai/CLIP.git
+git clone https://github.com/CompVis/taming-transformers
+pip install -e ./CLIP
+pip install -e ./taming-transformers
+```
 ## Download Stable Diffusion Weights
 Download the [Stable Diffusion weights](https://huggingface.co/CompVis/stable-diffusion-v-1-4-original) "sd-v1-4.ckpt", and place it in the `models` directory
 
