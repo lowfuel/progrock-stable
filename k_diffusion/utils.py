@@ -6,8 +6,10 @@ import shutil
 import urllib
 import warnings
 
+from PIL import Image
 import torch
-from torch import optim
+from torch import nn, optim
+from torch.utils import data
 from torchvision.transforms import functional as TF
 
 
@@ -249,3 +251,79 @@ def rand_log_uniform(shape, min_value, max_value, device='cpu', dtype=torch.floa
     min_value = math.log(min_value)
     max_value = math.log(max_value)
     return (torch.rand(shape, device=device, dtype=dtype) * (max_value - min_value) + min_value).exp()
+
+
+def rand_v_diffusion(shape, sigma_data=1., min_value=0., max_value=float('inf'), device='cpu', dtype=torch.float32):
+    """Draws samples from a truncated v-diffusion training timestep distribution."""
+    min_cdf = math.atan(min_value / sigma_data) * 2 / math.pi
+    max_cdf = math.atan(max_value / sigma_data) * 2 / math.pi
+    u = torch.rand(shape, device=device, dtype=dtype) * (max_cdf - min_cdf) + min_cdf
+    return torch.tan(u * math.pi / 2) * sigma_data
+
+
+def rand_split_log_normal(shape, loc, scale_1, scale_2, device='cpu', dtype=torch.float32):
+    """Draws samples from a split lognormal distribution."""
+    n = torch.randn(shape, device=device, dtype=dtype).abs()
+    u = torch.rand(shape, device=device, dtype=dtype)
+    n_left = n * -scale_1 + loc
+    n_right = n * scale_2 + loc
+    ratio = scale_1 / (scale_1 + scale_2)
+    return torch.where(u < ratio, n_left, n_right).exp()
+
+
+class FolderOfImages(data.Dataset):
+    """Recursively finds all images in a directory. It does not support
+    classes/targets."""
+
+    IMG_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.ppm', '.bmp', '.pgm', '.tif', '.tiff', '.webp'}
+
+    def __init__(self, root, transform=None):
+        super().__init__()
+        self.root = Path(root)
+        self.transform = nn.Identity() if transform is None else transform
+        self.paths = sorted(path for path in self.root.rglob('*') if path.suffix.lower() in self.IMG_EXTENSIONS)
+
+    def __repr__(self):
+        return f'FolderOfImages(root="{self.root}", len: {len(self)})'
+
+    def __len__(self):
+        return len(self.paths)
+
+    def __getitem__(self, key):
+        path = self.paths[key]
+        with open(path, 'rb') as f:
+            image = Image.open(f).convert('RGB')
+        image = self.transform(image)
+        return image,
+
+
+class CSVLogger:
+    def __init__(self, filename, columns):
+        self.filename = Path(filename)
+        self.columns = columns
+        if self.filename.exists():
+            self.file = open(self.filename, 'a')
+        else:
+            self.file = open(self.filename, 'w')
+            self.write(*self.columns)
+
+    def write(self, *args):
+        print(*args, sep=',', file=self.file, flush=True)
+
+
+@contextmanager
+def tf32_mode(cudnn=None, matmul=None):
+    """A context manager that sets whether TF32 is allowed on cuDNN or matmul."""
+    cudnn_old = torch.backends.cudnn.allow_tf32
+    matmul_old = torch.backends.cuda.matmul.allow_tf32
+    try:
+        if cudnn is not None:
+            torch.backends.cudnn.allow_tf32 = cudnn
+        if matmul is not None:
+            torch.backends.cuda.matmul.allow_tf32 = matmul
+        yield
+    finally:
+        if cudnn is not None:
+            torch.backends.cudnn.allow_tf32 = cudnn_old
+        if matmul is not None:
+            torch.backends.cuda.matmul.allow_tf32 = matmul_old
