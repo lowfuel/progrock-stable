@@ -212,7 +212,9 @@ def do_run(device, model, opt):
     # grid is a leftover from stable, but we use it to give our output file a unique name
     grid_count = thats_numberwang(outpath, opt.batch_name)
 
-    progress_image = "progress.jpg" if opt.filetype == ".jpg" else "progress.png"
+    progress_type = ".jpg" if opt.filetype == ".jpg" else ".png"
+    progress_image = "progress" + str(opt.device_id) + progress_type
+    print(f'Using {progress_image} for temporary output filename.')
 
     if opt.improve_composition == True:
         opt.n_iter = 1 # TODO: allow multiple iterations when doing improved composition
@@ -252,12 +254,11 @@ def do_run(device, model, opt):
         elif opt.improve_composition == True:
             opt.W = 512
             opt.H = 512
+        init_latent = None
         if opt.init_image is not None:
             init_latent = img_to_latent(opt.W, opt.H, opt.init_image, opt)
             assert 0. <= opt.strength <= 1., 'can only work with strength in [0.0, 1.0]'
             t_enc = int(opt.strength * opt.ddim_steps)
-        else:
-            init_latent = None
 
         shape = [opt.C, opt.H // opt.f, opt.W // opt.f]
 
@@ -901,14 +902,16 @@ def save_settings(options, prompt, filenum):
         json.dump(setting_list, f, ensure_ascii=False, indent=4)
 
 def esrgan_resize(input, id, esrgan_model='realesrgan-x4plus'):
-    input.save(f'_esrgan_orig{id}.png')
+    input_filename = f'_esrgan_orig{id}.png'
+    output_filename = f'_esrgan{id}_.png'
+    input.save(input_filename)
     input.close()
     try:
         subprocess.run(
-            ['realesrgan-ncnn-vulkan', '-n', esrgan_model, '-i', '_esrgan_orig.png', '-o', '_esrgan_.png'],
+            ['realesrgan-ncnn-vulkan', '-n', esrgan_model, '-i', input_filename, '-o', output_filename],
             stdout=subprocess.PIPE
         ).stdout.decode('utf-8')
-        output = Image.open('_esrgan_.png').convert('RGB')
+        output = Image.open(output_filename).convert('RGB')
         return output
     except Exception as e:
         print('ESRGAN resize failed. Make sure realesrgan-ncnn-vulkan is in your path (or in this directory)')
@@ -1057,7 +1060,8 @@ def main():
     device_id = "" # leave this blank unless it's a cuda device
     if torch.cuda.is_available() and "cuda" in cl_args.device:
         device = torch.device(f'{cl_args.device}')
-        device_id = ("_" + cl_args.device.rsplit(':',1)[1]) if "0" not in cl_args.device else ""
+        device_id = int(cl_args.device.rsplit(':',1)[1])
+        print(f'Using device_id {device_id} for device {device}')
     elif ("mps" in cl_args.device) or (torch.backends.mps.is_available()):
         device = torch.device("mps")
         settings.method = "ddim" # k_diffusion currently not working on anything other than cuda
@@ -1097,6 +1101,7 @@ def main():
                         with open(job_json, 'r', encoding="utf-8") as json_file:
                             settings_file = json.load(json_file)
                             settings.apply_settings_file(job_json, settings_file)
+                            print(f'Init is {settings.init_image}')
                             prompts = []
                             prompts.append(settings.prompt)
                         job_ready = True
