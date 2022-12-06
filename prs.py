@@ -213,7 +213,10 @@ def do_run(device, model, opt):
     grid_count = thats_numberwang(outpath, opt.batch_name)
 
     progress_type = ".jpg" if opt.filetype == ".jpg" else ".png"
-    progress_image = "progress" + str(opt.device_id) + progress_type
+    if opt.gpu_id_filenames:
+        progress_image = "progress" + str(opt.device_id) + progress_type
+    else:
+        progress_image = "progress" + progress_type
     print(f'Using {progress_image} for temporary output filename.')
 
     if opt.improve_composition == True:
@@ -439,7 +442,10 @@ def do_run(device, model, opt):
 
                             for x_sample in x_samples_ddim:
                                 x_sample = 255. * rearrange(x_sample.cpu().numpy(), 'c h w -> h w c')
-                                output_filename = os.path.join(outpath, f'{opt.batch_name}{opt.device_id}-{grid_count:04}{opt.filetype}')
+                                if opt.gpu_id_filenames:
+                                    output_filename = os.path.join(outpath, f'{opt.batch_name}{opt.device_id}-{grid_count:04}{opt.filetype}')
+                                else:
+                                    output_filename = os.path.join(outpath, f'{opt.batch_name}-{grid_count:04}{opt.filetype}')
                                 output_image = Image.fromarray(x_sample.astype(np.uint8))
                                 output_image.save(progress_image, pnginfo=metadata, quality = opt.quality)
                                 if opt.improve_composition == False: # this is our actual output, so save it accordingly
@@ -789,6 +795,7 @@ class Settings:
     method = "k_lms"
     save_settings = False
     improve_composition = False
+    gpu_id_filenames = False
     
     def apply_settings_file(self, filename, settings_file):
         print(f'Applying settings file: {filename}')
@@ -866,6 +873,8 @@ class Settings:
             self.save_settings = (settings_file["save_settings"])
         if is_json_key_present(settings_file, 'improve_composition'):
             self.improve_composition = (settings_file["improve_composition"])
+        if is_json_key_present(settings_file, 'gpu_id_filenames'):
+            self.gpu_id_filenames = (settings_file["gpu_id_filenames"])
 
 def save_settings(options, prompt, filenum):
     setting_list = {
@@ -896,7 +905,8 @@ def save_settings(options, prompt, filenum):
         'use_jpg' : "true" if options.filetype == ".jpg" else "false",
         'hide_metadata' : options.hide_metadata,
         'method' : options.method,
-        'improve_composition': options.improve_composition
+        'improve_composition': options.improve_composition,
+        'gpu_id_filenames': options.gpu_id_filenames
     }
     with open(f"{options.outdir}/{options.batch_name}-{filenum:04}.json",  "w+", encoding="utf-8") as f:
         json.dump(setting_list, f, ensure_ascii=False, indent=4)
@@ -987,7 +997,10 @@ def do_gobig(gobig_init, device, model, opt):
     result_split[0] = result_split[0] + '_gobig-'
     result = result_split[0] + result_split[1]
     print(f'Gobig output saved as {result}{opt.filetype}')
-    final_output.save(f'{result}{opt.filetype}', quality = opt.quality)
+    if opt.gpu_id_filenames:
+        final_output.save(f'{result}{opt.device_id}{opt.filetype}', quality = opt.quality)
+    else:
+        final_output.save(f'{result}{opt.filetype}', quality = opt.quality)
     final_output.close()
     input_image.close()
 
@@ -1061,6 +1074,8 @@ def main():
     if torch.cuda.is_available() and "cuda" in cl_args.device:
         device = torch.device(f'{cl_args.device}')
         device_id = int(cl_args.device.rsplit(':',1)[1])
+        #os.environ["CUDA_VISIBLE_DEVICES"] = f'{device_id}'
+        torch.cuda.set_device(device_id)
         print(f'Using device_id {device_id} for device {device}')
     elif ("mps" in cl_args.device) or (torch.backends.mps.is_available()):
         device = torch.device("mps")
@@ -1167,6 +1182,7 @@ def main():
                     "method": settings.method,
                     "save_settings": settings.save_settings,
                     "improve_composition": settings.improve_composition,
+                    "gpu_id_filenames": settings.gpu_id_filenames
                 }
                 opt = SimpleNamespace(**opt)
 
