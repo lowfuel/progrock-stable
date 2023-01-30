@@ -30,6 +30,7 @@ from k_diffusion.external import CompVisDenoiser
 
 from types import SimpleNamespace
 import json5 as json
+from json import dump
 
 try:
     # this silences the annoying "Some weights of the model checkpoint were not used when initializing..." message at start.
@@ -898,7 +899,7 @@ def save_settings(options, prompt, filenum):
         'improve_composition': options.improve_composition
     }
     with open(f"{options.outdir}/{options.batch_name}-{filenum:04}.json",  "w+", encoding="utf-8") as f:
-        json.dump(setting_list, f, ensure_ascii=False, indent=4)
+        dump(setting_list, f, ensure_ascii=False, indent=4)
 
 def esrgan_resize(input, id, esrgan_model='realesrgan-x4plus'):
     input.save(f'_esrgan_orig{id}.png')
