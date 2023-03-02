@@ -1,9 +1,5 @@
 # Prog Rock Stable
-An enhanced (hopefully!) version of Stable Diffusion
-
-Also available:
-- [Prog Rock Diffusion](https://github.com/lowfuel/progrockdiffusion) (command line Disco Diffusion, with Go_Big and other enhancements)
-- [Disco Diffusion notebook](https://github.com/lowfuel/DiscoDiffusion-Warp-gobig) with Go_Big
+This repository is no longer being updated (3/2/2023). 
 
 # Quick updating note:
 If you installed before 8/24/2022 and have just grabbed the latest code, you'll need to manually install a few extra items.
