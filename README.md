@@ -25,7 +25,13 @@ Create a [conda](https://conda.io/) environment named `prs`:
 conda env create -f environment.yaml
 conda activate prs
 ```
-
+For Linux:
+```
+git clone https://github.com/openai/CLIP.git
+git clone https://github.com/CompVis/taming-transformers
+pip install -e ./CLIP
+pip install -e ./taming-transformers
+```
 ## Download Stable Diffusion Weights
 Download the latest [Stable Diffusion weights](https://huggingface.co/runwayml/stable-diffusion-v1-5) - download whichever checkpoint is appropriate for your needs, rename it to "sd.ckpt", and place it in the `models` subdirectory
 
